@@ -45,3 +45,51 @@ Bytes [24 al 123]Carga Útil del Bloque 1: (Exactamente 100 bytes).
 Bytes [124 al 147]Cabecera del Bloque 2 (El nuevo): size=9852, is_free=true.
 Bytes [148 al 9999]Carga Útil del Bloque 2: (9852 bytes libres).
 */
+
+void *my_malloc(size_t size) {
+    // 1. Validación básica
+    if (size == 0) {
+        return NULL; 
+    }
+
+    // 2. Empezamos a buscar desde el inicio de nuestra memoria
+    t_bloque_metadato *actual = free_list;
+
+    while (actual != NULL) {
+        // ¿El bloque está libre y tiene tamaño suficiente?
+        if (actual->is_free && actual->size >= size) {
+            
+            // 3. ¿El bloque es lo suficientemente grande como para dividirlo?
+            // Necesitamos espacio para lo que pide el usuario + una nueva cabecera + al menos 1 byte extra
+            if (actual->size >= size + TAM_METADATO + 1) {
+                
+                // ¡Aritmética de punteros al rescate!
+                // Calculamos dónde irá la nueva cabecera del bloque sobrante.
+                // Convertimos a (uint8_t *) para avanzar byte por byte, y luego lo moldeamos al struct.
+                t_bloque_metadato *nuevo_bloque = (t_bloque_metadato *)((uint8_t *)actual + TAM_METADATO + size);
+                
+                // Configuramos el nuevo bloque libre con lo que sobra
+                nuevo_bloque->size = actual->size - size - TAM_METADATO;
+                nuevo_bloque->is_free = true;
+                nuevo_bloque->siguiente = actual->siguiente;
+                
+                // Ajustamos el tamaño de nuestro bloque actual y lo enlazamos al nuevo
+                actual->size = size;
+                actual->siguiente = nuevo_bloque;
+            }
+            
+            // 4. Marcamos el bloque como ocupado
+            actual->is_free = false;
+            
+            // Le devolvemos al usuario el puntero a su espacio útil (saltando nuestra cabecera)
+            return (void *)((uint8_t *)actual + TAM_METADATO);
+        }
+        
+        // Si no nos sirvió este bloque, saltamos al siguiente
+        actual = actual->siguiente;
+    }
+
+    // Si el bucle termina y llegamos aquí, significa que recorrimos toda la memoria
+    // y no encontramos ningún bloque adecuado. Nos quedamos sin espacio.
+    return NULL;
+}
