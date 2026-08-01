@@ -46,7 +46,7 @@ Bytes [124 al 147]Cabecera del Bloque 2 (El nuevo): size=9852, is_free=true.
 Bytes [148 al 9999]Carga Útil del Bloque 2: (9852 bytes libres).
 */
 
-void *my_malloc(size_t size) {
+void *func_malloc(size_t size) {
     // 1. Validación básica
     if (size == 0) {
         return NULL; 
@@ -92,4 +92,16 @@ void *my_malloc(size_t size) {
     // Si el bucle termina y llegamos aquí, significa que recorrimos toda la memoria
     // y no encontramos ningún bloque adecuado. Nos quedamos sin espacio.
     return NULL;
+}
+
+void func_free(void *ptr) {
+    if (ptr == NULL) {
+        return; // No hacemos nada si el puntero es NULL
+    }
+    
+    // Obtenemos el puntero al metadato del bloque a liberar
+    t_bloque_metadato *bloque = (t_bloque_metadato *)((uint8_t *)ptr - TAM_METADATO);
+    
+    // Marcamos el bloque como libre
+    bloque->is_free = true;
 }
